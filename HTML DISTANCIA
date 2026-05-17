@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Widget Auto Sensor</title>
+    <style>
+        /* Ajuste para centrar en TagoIO */
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: transparent;
+        }
+
+        /* ===== TARJETA ===== */
+        .tarjeta{
+          background:radial-gradient(circle at top,#020617,#000);
+          color:white;
+          padding:25px;
+          border-radius:22px;
+          font-family:'Segoe UI',Arial;
+          box-shadow:0 0 60px rgba(56,189,248,.5);
+          position:relative;
+          overflow:hidden;
+          transition: background 1s;
+          width: 100%;
+          max-width: 300px;
+        }
+
+        /* ===== TITULO ===== */
+        .titulo{
+          text-align:center;
+          font-size:1.4em;
+          color:#38bdf8;
+          margin-bottom:15px;
+          letter-spacing:2px;
+          text-shadow:0 0 25px #38bdf8;
+          font-weight: bold;
+        }
+
+        /* ===== CONTENEDOR ===== */
+        .contenedor{
+          display:flex;
+          gap:15px;
+          position:relative;
+        }
+
+        /* ===== PISTA ===== */
+        .pista{
+          position:relative;
+          height:160px;
+          flex:1;
+          background:#020617;
+          border-radius:18px;
+          overflow:hidden;
+          border:2px solid #1e293b;
+          box-shadow: inset 0 0 50px rgba(56,189,248,.45),0 0 40px rgba(56,189,248,.6);
+          transition: box-shadow 0.5s, background 1s;
+        }
+
+        /* ===== ILUMINACION CAMINO POR SEMAFORO ===== */
+        .pista.rojo{box-shadow: inset 0 0 60px rgba(239,68,68,.6),0 0 50px rgba(239,68,68,.8);}
+        .pista.amarillo{box-shadow: inset 0 0 60px rgba(250,204,21,.6),0 0 50px rgba(250,204,21,.8);}
+        .pista.verde{box-shadow: inset 0 0 60px rgba(34,197,94,.6),0 0 50px rgba(34,197,94,.8);}
+
+        /* ===== BARRERA ZEBRA (AMARILLO/NEGRO) ===== */
+        .pared{
+          position:absolute;
+          left:10px;
+          top:10px;
+          width:20px;
+          height:130px;
+          background:repeating-linear-gradient(
+            45deg,
+            #facc15 0 10px,
+            #000 10px 20px
+          );
+          border-radius:6px;
+          box-shadow:0 0 35px yellow;
+          z-index:2;
+        }
+
+        /* ===== LLUVIA ===== */
+        .lluvia{
+          position:absolute;
+          inset:0;
+          background:repeating-linear-gradient(
+            120deg,
+            rgba(255,255,255,.35) 0px,
+            rgba(255,255,255,.35) 2px,
+            transparent 2px,
+            transparent 12px
+          );
+          animation: lluvia 0.35s linear infinite;
+          opacity:.5;
+          display:block;
+          z-index:1;
+        }
+
+        @keyframes lluvia{
+          from{background-position:0 0}
+          to{background-position:-50px 100px}
+        }
+
+        /* ===== AUTO ===== */
+        .auto{
+          position:absolute;
+          top:45px;
+          left: 170px; /* Posición inicial */
+          font-size:55px;
+          transition:left .4s ease-out;
+          filter:drop-shadow(0 0 25px cyan) drop-shadow(0 0 20px #fff);
+          z-index:3;
+        }
+
+        /* ===== NEBLINEROS ===== */
+        .luces{
+          position:absolute;
+          top:50px;
+          width:40px;
+          height:16px;
+          left:-20px;
+          background:linear-gradient(to left, rgba(255,255,200,.7), transparent);
+          filter:blur(8px);
+          border-radius:6px;
+        }
+
+        /* ===== VIBRACION ===== */
+        @keyframes vibrar{
+          0%{transform:translate(0)}
+          25%{transform:translate(2px,-2px)}
+          50%{transform:translate(-2px,2px)}
+          75%{transform:translate(2px,2px)}
+          100%{transform:translate(0)}
+        }
+
+        .peligro .auto{
+          animation:vibrar .15s infinite;
+        }
+
+        /* ===== SEMAFORO ===== */
+        .semaforo{
+          width:60px;
+          background:#020617;
+          border-radius:16px;
+          padding:10px;
+          display:flex;
+          flex-direction:column;
+          gap:10px;
+          box-shadow:0 0 30px #000;
+          justify-content: center;
+          align-items: center;
+        }
+
+        .luz{
+          width:38px;
+          height:38px;
+          border-radius:50%;
+          opacity:.15;
+          transition: all 0.3s;
+        }
+
+        .luz-rojo{background:#ef4444}
+        .luz-amarillo{background:#facc15}
+        .luz-verde{background:#22c55e}
+
+        .peligro .luz-rojo{opacity:1;box-shadow:0 0 40px red}
+        .alerta .luz-amarillo{opacity:1;box-shadow:0 0 40px yellow}
+        .seguro .luz-verde{opacity:1;box-shadow:0 0 40px #22c55e}
+
+        /* ===== INFO ===== */
+        .info{
+          text-align:center;
+          margin-top:20px;
+        }
+
+        .distancia{
+          font-size:2.5em;
+          font-weight:bold;
+        }
+
+        .estado{
+          font-size:1.3em;
+          letter-spacing:4px;
+          font-weight: bold;
+          margin-top: 5px;
+        }
+        .text-peligro { color: #ef4444; }
+        .text-alerta { color: #facc15; }
+        .text-seguro { color: #22c55e; }
+
+        /* ===== SOL ===== */
+        .sol{
+          position:absolute;
+          top:10px;
+          right:10px;
+          font-size:40px;
+          color:yellow;
+          filter:drop-shadow(0 0 40px yellow);
+          display:none;
+          z-index:1;
+        }
+    </style>
+</head>
+<body>
+
+<div class="tarjeta seguro" id="mi-tarjeta">
+
+  <div class="titulo">SENSOR DE PROXIMIDAD</div>
+
+  <div class="contenedor">
+
+    <!-- PISTA -->
+    <div class="pista verde" id="pista">
+      <div class="lluvia" id="lluvia"></div>
+      <div class="pared"></div>
+
+      <div class="auto" id="mi-auto">
+        🚗
+        <div class="luces"></div>
+      </div>
+
+      <div class="sol" id="sol">☀️</div>
+    </div>
+
+    <!-- SEMAFORO -->
+    <div class="semaforo">
+      <div class="luz luz-rojo"></div>
+      <div class="luz luz-amarillo"></div>
+      <div class="luz luz-verde"></div>
+    </div>
+
+  </div>
+
+  <div class="info">
+    <div class="distancia"><span id="valor-distancia">--</span> cm</div>
+    <div class="estado text-seguro" id="texto-estado">ESPERANDO</div>
+  </div>
+
+</div>
+
+<!-- SCRIPT DE TAGOIO -->
+<script type="text/javascript" src="https://admin.tago.io/dist/custom-widget.js"></script>
+
+<script>
+    /* ===== LÓGICA DE TAGOIO Y ANIMACIONES ===== */
+    window.TagoIO.ready({ autoMargin: false });
+
+    // Referencias a los elementos de tu diseño
+    const tarjeta = document.getElementById('mi-tarjeta');
+    const auto = document.getElementById('mi-auto');
+    const pista = document.getElementById('pista');
+    const txtDistancia = document.getElementById('valor-distancia');
+    const txtEstado = document.getElementById('texto-estado');
+
+    // Función principal que controla TODO tu diseño
+    function actualizarPantalla(datos) {
+        if (!datos || datos.length === 0) return;
+        let val = null;
+
+        if (datos[0] && datos[0].value !== undefined) {
+            val = parseFloat(datos[0].value);
+        } else if (datos[0] && datos[0].result && datos[0].result.length > 0 && datos[0].result[0].value !== undefined) {
+            val = parseFloat(datos[0].result[0].value);
+        }
+
+        if (val !== null) {
+            // 1. Actualizar el número en pantalla
+            txtDistancia.innerText = val.toFixed(1);
+
+            // 2. Mover el auto (Si el valor es 170 o más, se queda al inicio. Si es menor, se acerca a la barrera)
+            let posicionLeft = val;
+            if(posicionLeft > 170) posicionLeft = 170; // Límite derecho
+            if(posicionLeft < 20) posicionLeft = 20;   // Límite para chocar con la barrera
+            auto.style.left = posicionLeft + 'px';
+
+            // 3. Limpiar clases anteriores
+            tarjeta.classList.remove('peligro', 'alerta', 'seguro');
+            pista.classList.remove('rojo', 'amarillo', 'verde');
+            txtEstado.classList.remove('text-peligro', 'text-alerta', 'text-seguro');
+
+            // 4. Lógica de colores y semáforo según la distancia
+            if (val <= 10) {
+                tarjeta.classList.add('peligro');
+                pista.classList.add('rojo');
+                txtEstado.classList.add('text-peligro');
+                txtEstado.innerText = 'PELIGRO';
+            } else if (val > 10 && val <= 20) {
+                tarjeta.classList.add('alerta');
+                pista.classList.add('amarillo');
+                txtEstado.classList.add('text-alerta');
+                txtEstado.innerText = 'ALERTA';
+            } else {
+                tarjeta.classList.add('seguro');
+                pista.classList.add('verde');
+                txtEstado.classList.add('text-seguro');
+                txtEstado.innerText = 'SEGURO';
+            }
+        }
+    }
+
+    // Al arrancar lee el último dato
+    window.TagoIO.onStart((widget) => {
+        if(widget && widget.data) actualizarPantalla(widget.data);
+    });
+
+    // En tiempo real mientras el ESP32 envía datos
+    window.TagoIO.onRealtime((data) => {
+        actualizarPantalla(data);
+    });
+
+    /* ===== CICLO LLUVIA / DESPEJADO CON SOL (Mantenido intacto) ===== */
+    let ll = document.getElementById('lluvia');
+    let sol = document.getElementById('sol');
+    let lluvia = true;
+
+    setInterval(()=>{
+      lluvia = !lluvia;
+      if(lluvia){
+        ll.style.display='block';
+        sol.style.display='none';
+        tarjeta.style.background='radial-gradient(circle at top,#020617,#000)';
+      }else{
+        ll.style.display='none';
+        sol.style.display='block';
+        // Fondo más soleado
+        tarjeta.style.background='radial-gradient(circle at top,#3b3b5c,#111)';
+      }
+    }, 5000);
+</script>
+
+</body>
+</html>
